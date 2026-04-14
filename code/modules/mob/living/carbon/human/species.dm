@@ -1645,6 +1645,24 @@ GLOBAL_LIST_EMPTY(roundstart_races)
 		target.lastattacker_weakref = WEAKREF(user)
 		if(target.mind)
 			target.mind.attackedme[user.real_name] = world.time
+		// Leg-targeted kicks can sweep a standing target off their feet.
+		if(stander && (selzone == BODY_ZONE_L_LEG || selzone == BODY_ZONE_R_LEG) && !target.IsKnockdown())
+			var/attacker_roll = rand(1, max(user.STASTR, 1))
+			var/victim_con_roll = rand(1, max(target.STACON, 1))
+			var/victim_spd_roll = rand(1, max(target.STASPD, 1))
+			// Victim keeps footing if either CON or SPD roll beats the attacker's STR roll.
+			if(victim_con_roll <= attacker_roll && victim_spd_roll <= attacker_roll)
+				target.Knockdown(SHOVE_KNOCKDOWN_HUMAN)
+				target.visible_message(span_danger("[user.name] sweeps [target.name]'s leg, knocking them off their feet!"),
+					span_danger("[user.name] sweeps my leg and knocks me off my feet!"), span_hear("I hear a hard thud!"), COMBAT_MESSAGE_RANGE, user)
+				to_chat(user, span_danger("I sweep [target.name]'s leg and knock [target.p_them()] off [target.p_their()] feet!"))
+				log_combat(user, target, "kicked", "leg sweep knockdown")
+				if(target.STACON < 13)
+					var/obj/item/held_weapon = target.get_active_held_item()
+					if(held_weapon && target.dropItemToGround(held_weapon))
+						target.visible_message(span_danger("[target.name] drops \the [held_weapon]!"),
+							span_warning("I drop \the [held_weapon]!"), null, COMBAT_MESSAGE_RANGE)
+						log_combat(user, target, "kicked", "forced weapon drop from leg sweep")
 		user.stamina_add(15)
 		target.forcesay(GLOB.hit_appends)
 
