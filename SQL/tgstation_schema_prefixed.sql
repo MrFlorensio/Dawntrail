@@ -551,28 +551,15 @@ CREATE TABLE `SS13_ticket` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-DELIMITER $$
-CREATE PROCEDURE `set_poll_deleted`(
-	IN `poll_id` INT
-)
-SQL SECURITY INVOKER
-BEGIN
-UPDATE `SS13_poll_question` SET deleted = 1 WHERE id = poll_id;
-UPDATE `SS13_poll_option` SET deleted = 1 WHERE pollid = poll_id;
-UPDATE `SS13_poll_vote` SET deleted = 1 WHERE pollid = poll_id;
-UPDATE `SS13_poll_textreply` SET deleted = 1 WHERE pollid = poll_id;
-END
-$$
-CREATE TRIGGER `SS13_role_timeTlogupdate` AFTER UPDATE ON `SS13_role_time` FOR EACH ROW BEGIN INSERT into SS13_role_time_log (ckey, job, delta) VALUES (NEW.CKEY, NEW.job, NEW.minutes-OLD.minutes);
-END
-$$
-CREATE TRIGGER `SS13_role_timeTloginsert` AFTER INSERT ON `SS13_role_time` FOR EACH ROW BEGIN INSERT into SS13_role_time_log (ckey, job, delta) VALUES (NEW.ckey, NEW.job, NEW.minutes);
-END
-$$
-CREATE TRIGGER `SS13_role_timeTlogdelete` AFTER DELETE ON `SS13_role_time` FOR EACH ROW BEGIN INSERT into SS13_role_time_log (ckey, job, delta) VALUES (OLD.ckey, OLD.job, 0-OLD.minutes);
-END
-$$
-DELIMITER ;
+-- No DELIMITER / stored procedure: works in HeidiSQL and avoids mysql.proc issues. Poll deletes use DM (delete_poll).
+CREATE TRIGGER `SS13_role_timeTlogupdate` AFTER UPDATE ON `SS13_role_time` FOR EACH ROW
+INSERT INTO `SS13_role_time_log` (`ckey`, `job`, `delta`) VALUES (NEW.`ckey`, NEW.`job`, NEW.`minutes` - OLD.`minutes`);
+
+CREATE TRIGGER `SS13_role_timeTloginsert` AFTER INSERT ON `SS13_role_time` FOR EACH ROW
+INSERT INTO `SS13_role_time_log` (`ckey`, `job`, `delta`) VALUES (NEW.`ckey`, NEW.`job`, NEW.`minutes`);
+
+CREATE TRIGGER `SS13_role_timeTlogdelete` AFTER DELETE ON `SS13_role_time` FOR EACH ROW
+INSERT INTO `SS13_role_time_log` (`ckey`, `job`, `delta`) VALUES (OLD.`ckey`, OLD.`job`, 0 - OLD.`minutes`);
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
