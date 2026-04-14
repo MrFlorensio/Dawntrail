@@ -345,7 +345,7 @@
 /**
   * Sets a poll and its associated data as deleted in the database.
   *
-  * Calls the procedure set_poll_deleted to set the deleted column to 1 for each row in the poll_ tables matching the poll id used.
+  * Marks poll rows deleted (replaces legacy CALL set_poll_deleted stored procedure).
   * Then deletes each option datum and finally the poll itself.
   *
   */
@@ -355,9 +355,34 @@
 	if(!SSdbcore.Connect())
 		to_chat(usr, span_danger("Failed to establish database connection."))
 		return
+	var/list/poll_id_list = list("poll_id" = poll_id)
 	var/datum/DBQuery/query_delete_poll = SSdbcore.NewQuery(
-		"CALL set_poll_deleted(:poll_id)",
-		list("poll_id" = poll_id)
+		"UPDATE [format_table_name("poll_question")] SET deleted = 1 WHERE id = :poll_id",
+		poll_id_list
+	)
+	if(!query_delete_poll.warn_execute())
+		qdel(query_delete_poll)
+		return
+	qdel(query_delete_poll)
+	query_delete_poll = SSdbcore.NewQuery(
+		"UPDATE [format_table_name("poll_option")] SET deleted = 1 WHERE pollid = :poll_id",
+		poll_id_list
+	)
+	if(!query_delete_poll.warn_execute())
+		qdel(query_delete_poll)
+		return
+	qdel(query_delete_poll)
+	query_delete_poll = SSdbcore.NewQuery(
+		"UPDATE [format_table_name("poll_vote")] SET deleted = 1 WHERE pollid = :poll_id",
+		poll_id_list
+	)
+	if(!query_delete_poll.warn_execute())
+		qdel(query_delete_poll)
+		return
+	qdel(query_delete_poll)
+	query_delete_poll = SSdbcore.NewQuery(
+		"UPDATE [format_table_name("poll_textreply")] SET deleted = 1 WHERE pollid = :poll_id",
+		poll_id_list
 	)
 	if(!query_delete_poll.warn_execute())
 		qdel(query_delete_poll)
