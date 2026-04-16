@@ -1,7 +1,37 @@
 //Used to manage sending droning sounds to various clients
+
+/// If combat mode is re-enabled within this time, resume the same track at the saved offset (see snapshot_combat_music_for_resume).
+#define CMODE_MUSIC_RESUME_WINDOW (2 MINUTES)
+
 SUBSYSTEM_DEF(droning)
 	name = "Droning"
 	flags = SS_NO_INIT|SS_NO_FIRE
+
+/datum/controller/subsystem/droning/proc/snapshot_combat_music_for_resume(client/C)
+	if(!C?.mob || !isliving(C.mob) || !C.mob.cmode)
+		return
+	C.cmode_music_stopped_at = world.time
+	var/sound/picked
+	for(var/sound/S in C.SoundQuery())
+		if(S.channel != CHANNEL_BUZZ)
+			continue
+		if(C.droning_sound && S.file == C.droning_sound.file)
+			picked = S
+			break
+		if(!picked)
+			picked = S
+	if(picked)
+		C.cmode_music_saved_file = picked.file
+		if(isnum(picked.offset) && picked.offset >= 0)
+			C.cmode_music_saved_offset = picked.offset
+		else
+			C.cmode_music_saved_offset = 0
+	else if(C.droning_sound?.file)
+		C.cmode_music_saved_file = C.droning_sound.file
+		C.cmode_music_saved_offset = 0
+	else
+		C.cmode_music_saved_file = null
+		C.cmode_music_saved_offset = 0
 
 /datum/controller/subsystem/droning/proc/area_entered(area/area_entered, client/entering)
 	if(!area_entered || !entering)
@@ -98,12 +128,26 @@ SUBSYSTEM_DEF(droning)
 		if(H.has_status_effect(/datum/status_effect/buff/weed))
 			frenq = 0.5
 
-	//kill the previous droning sound
+	// Kill whatever BYOND-native audio was playing (area ambience etc.)
 	kill_droning(dreamer)
-	var/sound/combat_music = sound(pick(music), repeat = TRUE, wait = 0, channel = CHANNEL_BUZZ, volume = (dreamer?.prefs.musicvol)*1.2)
+
+	var/list/tracks = islist(music) ? music : list(music)
+	var/chosen_file = pick(tracks)
+	var/start_offset = 0
+	if(dreamer.cmode_music_stopped_at && (world.time - dreamer.cmode_music_stopped_at <= CMODE_MUSIC_RESUME_WINDOW) \
+			&& dreamer.cmode_music_saved_file && (dreamer.cmode_music_saved_file in tracks))
+		chosen_file = dreamer.cmode_music_saved_file
+		start_offset = max(0, dreamer.cmode_music_saved_offset)
+
+	var/target_vol = dreamer.prefs.musicvol * 1.2
+
+	// BYOND native playback (tgui play_music only accepts http(s) URLs).
+	var/sound/combat_music = sound(chosen_file, repeat = TRUE, wait = 0, channel = CHANNEL_BUZZ, volume = target_vol)
 	combat_music.frequency = frenq
 	if(!HAS_TRAIT(dreamer.mob, TRAIT_DRUQK))
 		combat_music.pitch = 1 / combat_music.frequency
+	if(start_offset > 0)
+		combat_music.offset = start_offset
 	SEND_SOUND(dreamer, combat_music)
 	dreamer.droning_sound = combat_music
 	dreamer.last_droning_sound = combat_music.file
