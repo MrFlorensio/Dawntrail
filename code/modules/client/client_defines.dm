@@ -143,6 +143,13 @@
 	var/last_droning_sound
 	var/sound/droning_sound
 
+	/// world.time when combat mode last turned off; used with cmode_music_saved_* for resume within CMODE_MUSIC_RESUME_WINDOW
+	var/cmode_music_stopped_at = 0
+	/// Last combat track file (from SoundQuery) for resume
+	var/cmode_music_saved_file
+	/// Playback position in seconds when combat mode last turned off
+	var/cmode_music_saved_offset = 0
+
 	// List of all asset filenames sent to this client by the asset cache, along with their assoicated md5s
 	var/list/sent_assets = list()
 	/// List of all completed blocking send jobs awaiting acknowledgement by send_asset
