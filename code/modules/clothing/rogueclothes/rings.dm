@@ -263,6 +263,12 @@
 	icon_state = "ring_duel"
 	sellprice = 10
 
+/obj/item/clothing/ring/trickster
+	name = "trickster's ring"
+	desc = "Exquisite ring that bursts with strange energy."
+	icon_state = "ring_trickster"
+	sellprice = 350
+
 /obj/item/clothing/ring/fate_weaver
 	name = "fate weaver"
 	desc = "An arcyne creation first theorized by malcontents with the resolution of Xylix's plays. It protects is wearer by tugging things gently toward less fatal potentials."
