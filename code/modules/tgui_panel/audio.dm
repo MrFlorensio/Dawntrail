@@ -40,3 +40,11 @@
 	if(!is_ready())
 		return
 	window.send_message("audio/stopMusic")
+
+/**
+ * public
+ *
+ * Stops combat-mode music in the browser panel. Uses the same HTML audio sink as admin music.
+ */
+/datum/tgui_panel/proc/stop_combat_music()
+	stop_music()
