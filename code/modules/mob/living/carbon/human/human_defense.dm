@@ -117,8 +117,55 @@
 	if(dna && dna.species)
 		dna.species.on_hit(P, src)
 
+// Returns TRUE if the projectile was caught (caller should return BULLET_ACT_BLOCK).
+	/// Requires throw/catch stance: empty active hand + in_throw_mode, same as catching thrown items.
+	/mob/living/carbon/human/proc/try_catch_flying_projectile(obj/projectile/P)
+		if(QDELETED(P) || QDELETED(src))
+			return FALSE
+		if(!istype(P, /obj/projectile/bullet))
+			return FALSE
+		if(istype(P, /obj/projectile/bullet/spider))
+			return FALSE
+		if(P.nodamage)
+			return FALSE
+		if(!ispath(P.ammo_type))
+			return FALSE
+		if(P.firer == src)
+			return FALSE
+		if(stat != CONSCIOUS || incapacitated())
+			return FALSE
+		if(!can_catch_item())
+			return FALSE
+		var/turf/my_turf = get_turf(src)
+		var/turf/source_turf = get_turf(P.firer)
+		if(!source_turf)
+			source_turf = P.starting
+		if(!my_turf || !source_turf)
+			return FALSE
+		var/shot_dir = get_dir(my_turf, source_turf)
+		if(!shot_dir)
+			return FALSE
+		// Forward cone: diagonal left, straight, diagonal right (three facing arcs).
+		var/list/forward_dirs = list(turn(dir, -45), dir, turn(dir, 45))
+		if(!(shot_dir in forward_dirs))
+			return FALSE
+		var/has_ring = istype(wear_ring, /obj/item/clothing/ring/trickster)
+		var/has_stats = (get_skill_level(/datum/skill/misc/athletics) >= SKILL_LEVEL_LEGENDARY && STASPD >= 12 && STAPER >= 14)
+		if(!has_ring && !has_stats)
+			return FALSE
+		var/obj/item/caught = new P.ammo_type(my_turf)
+		if(!put_in_hands(caught, TRUE, FALSE, TRUE))
+			return FALSE
+		throw_mode_off()
+		visible_message(span_danger("[src] snatches \the [P] out of the air!"), \
+			span_userdanger("I snatch \the [P] out of the air!"), null, COMBAT_MESSAGE_RANGE)
+		if(P.firer)
+			log_combat(src, P.firer, "caught projectile", P.name)
+		return TRUE
 
 /mob/living/carbon/human/bullet_act(obj/projectile/P, def_zone = BODY_ZONE_CHEST)
+	if(try_catch_flying_projectile(P))
+		return BULLET_ACT_BLOCK
 	if(istype(P, /obj/projectile/bullet))
 		if((P.damage_type == BURN) || (P.damage_type == BRUTE))
 			if(!P.nodamage && P.damage < src.health && isliving(P.firer))
