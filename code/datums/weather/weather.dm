@@ -70,31 +70,58 @@
 		if(end_overlay)
 			update_areas(end_overlay, null, turf)
 
+/// Updates weather visuals for every client; yields so one tick is not monopolized at high population.
+/datum/weather/proc/refresh_all_client_weather()
+	var/n = 0
+	for(var/client/CL as anything in GLOB.clients)
+		CL.update_weather(TRUE)
+		if(++n % 12 == 0)
+			CHECK_TICK
+
+/// Chat + sound only for mobs on impacted z-levels; yields every few hits so storms do not hitch the server.
+/datum/weather/proc/notify_impacted_players(chat_msg, sound_file)
+	if(!chat_msg && !sound_file)
+		return
+	var/hits = 0
+	for(var/mob/M as anything in GLOB.player_list)
+		var/turf/mob_turf = get_turf(M)
+		if(!mob_turf || !(mob_turf.z in impacted_z_levels))
+			continue
+		if(chat_msg)
+			to_chat(M, chat_msg)
+		if(sound_file)
+			SEND_SOUND(M, sound(sound_file))
+		if(++hits % 10 == 0)
+			CHECK_TICK
+
 
 /datum/weather/proc/telegraph()
 	if(stage == STARTUP_STAGE)
 		return
 	stage = STARTUP_STAGE
 	var/list/affectareas = list()
+	var/i = 0
 	for(var/V in get_areas(area_type))
 		affectareas += V
+		if(++i % 25 == 0)
+			CHECK_TICK
+	i = 0
 	for(var/V in protected_areas)
 		affectareas -= get_areas(V)
+		if(++i % 5 == 0)
+			CHECK_TICK
+	i = 0
 	for(var/V in affectareas)
 		var/area/A = V
 		if(A.z in impacted_z_levels)
 			impacted_areas |= A
+		if(++i % 25 == 0)
+			CHECK_TICK
 	weather_duration = rand(weather_duration_lower, weather_duration_upper)
 	SSweather.curweathers += src
 	if(telegraph_overlay)
 		update_areas(telegraph_overlay)
-	for(var/M in GLOB.player_list)
-		var/turf/mob_turf = get_turf(M)
-		if(mob_turf && (mob_turf.z in impacted_z_levels))
-			if(telegraph_message)
-				to_chat(M, telegraph_message)
-			if(telegraph_sound)
-				SEND_SOUND(M, sound(telegraph_sound))
+	notify_impacted_players(telegraph_message, telegraph_sound)
 	addtimer(CALLBACK(src, PROC_REF(start)), telegraph_duration)
 
 /datum/weather/proc/starteffected()
@@ -111,36 +138,22 @@
 	if(stage >= MAIN_STAGE)
 		return
 	stage = MAIN_STAGE
-	for(var/client/CL in GLOB.clients)
-		CL.update_weather(TRUE)
+	refresh_all_client_weather()
 	if(weather_overlay)
 		update_areas(weather_overlay)
 	starteffected()
 	initialprocess()
-	for(var/M in GLOB.player_list)
-		var/turf/mob_turf = get_turf(M)
-		if(mob_turf && (mob_turf.z in impacted_z_levels))
-			if(weather_message)
-				to_chat(M, weather_message)
-			if(weather_sound)
-				SEND_SOUND(M, sound(weather_sound))
+	notify_impacted_players(weather_message, weather_sound)
 	addtimer(CALLBACK(src, PROC_REF(wind_down)), weather_duration)
 
 /datum/weather/proc/wind_down()
 	if(stage >= WIND_DOWN_STAGE)
 		return
 	stage = WIND_DOWN_STAGE
-	for(var/client/CL in GLOB.clients)
-		CL.update_weather(TRUE)
+	refresh_all_client_weather()
 	if(end_overlay)
 		update_areas(end_overlay)
-	for(var/M in GLOB.player_list)
-		var/turf/mob_turf = get_turf(M)
-		if(mob_turf && (mob_turf.z in impacted_z_levels))
-			if(end_message)
-				to_chat(M, end_message)
-			if(end_sound)
-				SEND_SOUND(M, sound(end_sound))
+	notify_impacted_players(end_message, end_sound)
 	addtimer(CALLBACK(src, PROC_REF(end)), end_duration)
 
 /datum/weather/proc/end()
