@@ -342,14 +342,14 @@
 
             var/mob/dead/observer/ghost = null
 
-            for (var/mob/dead/observer/G in world)
+            for (var/mob/dead/observer/G in GLOB.dead_mob_list)
                 if (G.mind == target.mind)
                     ghost = G
                     break
 
             if (!ghost && target.mind && target.mind.key)
                 var/expected_ckey = ckey(target.mind.key)
-                for (var/mob/dead/observer/G2 in world)
+                for (var/mob/dead/observer/G2 in GLOB.dead_mob_list)
                     if (G2.client && ckey(G2.key) == expected_ckey)
                         ghost = G2
                         break
