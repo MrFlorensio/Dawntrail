@@ -895,7 +895,9 @@ SUBSYSTEM_DEF(ticker)
 		to_chat(astrater, span_userdanger("You feel the pain of [astrater.patron]!"))
 		astrater.emote("painscream", intentional = FALSE)
 
-	for(var/turf/open/water/W in world)
+	for(var/turf/open/water/W as anything in GLOB.water_turf_list)
+		if(QDELETED(W))
+			continue
 		W.water_reagent = /datum/reagent/blood
 		W.water_color = "#C80000"
 		W.mapped = FALSE
