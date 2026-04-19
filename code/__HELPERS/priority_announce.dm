@@ -2,8 +2,7 @@
 	if(!text)
 		return
 
-	var/announcement
-
+	var/announcement = ""
 	if (title && length(title) > 0)
 		announcement += "<h1 class='alert'>[title]</h1>"
 	announcement += "<br><span class='alert'>[STRIP_HTML_SIMPLE(text, MAX_MESSAGE_LEN)]</span>"
@@ -12,28 +11,30 @@
 		sender.log_talk(text, LOG_SAY, tag="priority announcement")
 		message_admins("[ADMIN_LOOKUPFLW(sender)] has made a priority announcement.")
 
-	var/s = sound(sound)
-	for(var/mob/M in GLOB.player_list)
+	var/s = sound ? sound(sound) : null
+	var/n = 0
+	for(var/mob/M as anything in GLOB.player_list)
+		if(++n % 12 == 0)
+			CHECK_TICK
 		if (!M.can_hear())
-			return
+			continue
 		if (receiver && !(istype(M, receiver) || (sender && M == sender)))
-			return
+			continue
 
 		to_chat(M, announcement)
-		if (M.client.prefs.toggles & SOUND_ANNOUNCEMENTS)
-			if (!sound)
-				return
-			M.playsound_local(M, s, 100)
+		if (M.client?.prefs.toggles & SOUND_ANNOUNCEMENTS)
+			if (s)
+				M.playsound_local(M, s, 100)
 
 /proc/minor_announce(message, title = "", alert)
 	if(!message)
 		return
 
-	for(var/mob/M in GLOB.player_list)
+	var/n = 0
+	for(var/mob/M as anything in GLOB.player_list)
+		if(++n % 12 == 0)
+			CHECK_TICK
 		if(M.can_hear())
 			to_chat(M, "<span class='big bold'><font color = purple>[html_encode(title)]</font color><BR>[html_encode(message)]</span><BR>")
-			if(M.client.prefs.toggles & SOUND_ANNOUNCEMENTS)
-				if(alert)
-					M.playsound_local(M, 'sound/misc/alert.ogg', 100)
-				else
-					M.playsound_local(M, 'sound/misc/alert.ogg', 100)
+			if(M.client?.prefs.toggles & SOUND_ANNOUNCEMENTS)
+				M.playsound_local(M, 'sound/misc/alert.ogg', 100)
