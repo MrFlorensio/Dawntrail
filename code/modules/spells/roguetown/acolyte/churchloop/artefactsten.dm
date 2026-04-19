@@ -721,14 +721,9 @@ Necra's Censer (by ARefrigerator)
 /proc/eora_lookup_name_by_id(id)
 	if(!id) return "Unknown"
 
-	if(islist(GLOB?.human_list))
-		for(var/mob/living/carbon/human/H in GLOB.human_list)
-			if(eora_get_round_id(H) == id)
-				return H.real_name ? H.real_name : H.name
-	else
-		for(var/mob/living/carbon/human/H in world)
-			if(eora_get_round_id(H) == id)
-				return H.real_name ? H.real_name : H.name
+	for(var/mob/living/carbon/human/H as anything in GLOB.human_list)
+		if(eora_get_round_id(H) == id)
+			return H.real_name ? H.real_name : H.name
 
 	if(EORA_ID_NAME[id])
 		return "[EORA_ID_NAME[id]]"
@@ -1113,7 +1108,7 @@ Necra's Censer (by ARefrigerator)
 
 /proc/_ravox_guess_species_by_hash(hash as text)
 	if(!length(hash)) return "Unknown"
-	for(var/mob/living/carbon/human/H in world)
+	for(var/mob/living/carbon/human/H as anything in GLOB.human_list)
 		if(H?.dna?.uni_identity)
 			var/fp = md5(H.dna.uni_identity)
 			if(fp == hash)
