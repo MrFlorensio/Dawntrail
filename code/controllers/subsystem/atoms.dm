@@ -28,20 +28,29 @@ SUBSYSTEM_DEF(atoms)
 
 	var/count
 	var/list/mapload_arg = list(TRUE)
+	/// Yield every N loop iterations so scanning world / big atom lists does not freeze Dream Daemon.
+	var/static/init_tick_batch = 4
+	var/steps = 0
 	if(atoms)
-		count = atoms.len
-		for(var/I in atoms)
-			var/atom/A = I
-			if(!(A.flags_1 & INITIALIZED_1))
-				InitAtom(I, mapload_arg)
+		count = 0
+		for(var/I as anything in atoms)
+			if(++steps % init_tick_batch == 0)
 				CHECK_TICK
+			var/atom/A = I
+			if(A.flags_1 & INITIALIZED_1)
+				continue
+			InitAtom(I, mapload_arg)
+			count++
 	else
 		count = 0
-		for(var/atom/A in world)
-			if(!(A.flags_1 & INITIALIZED_1))
-				InitAtom(A, mapload_arg)
-				++count
+		steps = 0
+		for(var/atom/A as anything in world)
+			if(++steps % init_tick_batch == 0)
 				CHECK_TICK
+			if(A.flags_1 & INITIALIZED_1)
+				continue
+			InitAtom(A, mapload_arg)
+			count++
 
 	to_chat_immediate(GLOB.admins, span_admin("SSATOMS: Initialized [count] atoms"))
 	log_world("Initialized [count] atoms")
@@ -50,9 +59,12 @@ SUBSYSTEM_DEF(atoms)
 	initialized = INITIALIZATION_INNEW_REGULAR
 
 	if(late_loaders.len)
-		for(var/I in late_loaders)
+		var/late_n = 0
+		for(var/I as anything in late_loaders)
 			var/atom/A = I
 			A.LateInitialize()
+			if(++late_n % 12 == 0)
+				CHECK_TICK
 		to_chat_immediate(GLOB.admins, span_admin("SSATOMS: Late initialized [length(late_loaders)] atoms"))
 		log_world("Late initialized [length(late_loaders)] atoms")
 		late_loaders.Cut()
