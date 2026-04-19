@@ -11,6 +11,7 @@
 	icon_state = "top"
 	layer = BELOW_MOB_LAYER
 
+GLOBAL_LIST_EMPTY(water_turf_list)
 
 /turf/open/water
 	gender = PLURAL
@@ -46,6 +47,7 @@
 
 /turf/open/water/Initialize()
 	.  = ..()
+	GLOB.water_turf_list += src
 	water_overlay = new(src)
 	water_top_overlay = new(src)
 	update_icon()
@@ -261,6 +263,7 @@
 	return
 
 /turf/open/water/Destroy()
+	GLOB.water_turf_list -= src
 	. = ..()
 	if(water_overlay)
 		QDEL_NULL(water_overlay)
