@@ -36,7 +36,10 @@ GLOBAL_LIST_INIT(freqtospan, list(
 
 /atom/movable/proc/send_speech(message, range = 7, obj/source = src, bubble_type, list/spans, datum/language/message_language = null, message_mode)
 	var/rendered = compose_message(src, message_language, message, , spans, message_mode)
+	var/_send_speech_step = 0
 	for(var/atom/movable/hearing_movable as anything in get_hearers_in_view(range, source))
+		if(++_send_speech_step % 16 == 0)
+			CHECK_TICK
 		if(!hearing_movable) // Should not get nulls, but just in case.
 			stack_trace("somehow theres a null returned from get_hearers_in_view() in send_speech!")
 			continue
