@@ -68,7 +68,7 @@ SUBSYSTEM_DEF(nightshift)
 	set waitfor = FALSE
 	for(var/obj/A in GLOB.TodUpdate)
 		A.update_tod(GLOB.tod)
-	for(var/mob/living/M in GLOB.mob_list)
+	for(var/mob/living/M as anything in GLOB.mob_living_list)
 		M.update_tod(GLOB.tod)
 
 /obj/proc/update_tod(todd)
