@@ -104,7 +104,7 @@ GLOBAL_VAR_INIT(dayspassed, FALSE)
 				GLOB.dayspassed = 1
 			SStreasury.distribute_estate_incomes()
 			SStreasury.distribute_daily_payments()
-		for(var/mob/living/player in GLOB.mob_list)
+		for(var/mob/living/player as anything in GLOB.mob_living_list)
 			if(player.stat != DEAD && player.client)
 				player.do_time_change()
 
