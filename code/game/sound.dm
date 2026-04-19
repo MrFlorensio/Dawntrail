@@ -85,7 +85,10 @@
 	listeners += SSmobs.dead_players_by_zlevel[source_z]
 	. = list()
 
+	var/_playsound_step = 0
 	for(var/mob/M as anything in listeners)
+		if(++_playsound_step % 12 == 0)
+			CHECK_TICK
 		var/turf/tocheck = get_turf(M)
 		// Check relay instead.
 		if(isdullahan(M))
@@ -101,7 +104,10 @@
 			if(M.playsound_local(source, soundin, vol, vary, frequency, falloff, resolve_sound_channel(M, channel, repeat), pressure_affected, S, repeat))
 				. += M
 
+	_playsound_step = 0
 	for(var/mob/M as anything in muffled_listeners)
+		if(++_playsound_step % 12 == 0)
+			CHECK_TICK
 		if(get_dist(M, turf_source) <= maxdistance)
 			if(animal_pref)
 				if(M.client?.prefs?.mute_animal_emotes)
@@ -308,7 +314,10 @@
 /proc/sound_to_playing_players(soundin, volume = 100, vary = FALSE, frequency = 0, falloff = FALSE, channel = 0, pressure_affected = FALSE, sound/S)
 	if(!S)
 		S = sound(get_sfx(soundin))
+	var/n = 0
 	for(var/m in GLOB.player_list)
+		if(++n % 12 == 0)
+			CHECK_TICK
 		if(ismob(m) && !isnewplayer(m))
 			var/mob/M = m
 			M.playsound_local(M, null, volume, vary, frequency, falloff, channel, pressure_affected, S)
