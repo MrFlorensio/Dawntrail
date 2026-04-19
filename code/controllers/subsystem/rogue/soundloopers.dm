@@ -7,21 +7,20 @@ SUBSYSTEM_DEF(soundloopers)
 	var/list/processing = list()
 	var/list/currentrun = list()
 	var/client_ticker = 0
+	/// When TRUE, run one client sweep after the currentrun queue drains (survives MC_TICK_CHECK resumes).
+	var/pending_client_refresh = FALSE
 
 /datum/controller/subsystem/soundloopers/fire(resumed = 0)
 	if (!resumed || !currentrun.len)
 		src.currentrun = processing.Copy()
 
+	client_ticker++
+	if(client_ticker >= 5) // clients need less frequent spatial refresh than sound_loop ticks
+		client_ticker = 0
+		pending_client_refresh = TRUE
+
 	//cache for sanic speed (lists are references anyways)
 	var/list/current = src.currentrun
-	var/check_clients = FALSE
-	client_ticker++
-
-	if(client_ticker>=5) //this is dumb but necessary- clients update every half tick but sounds themselves need to be updated regularly
-		client_ticker = 0
-		check_clients = TRUE
-	else
-		check_clients = FALSE
 
 	while (current.len)
 		var/datum/looping_sound/thing = current[current.len]
@@ -36,13 +35,14 @@ SUBSYSTEM_DEF(soundloopers)
 			if(thing.sound_loop()) //returns 1 if it fails for some reason
 				continue
 
-		if(check_clients && thing.persistent_loop)
-			for(var/client/C in GLOB.clients)
-				if(C.mob) //Not in the lobby
-					C.update_sounds()
-
 		if (MC_TICK_CHECK)
 			return
+
+	if(pending_client_refresh)
+		pending_client_refresh = FALSE
+		for(var/client/C in GLOB.clients)
+			if(C.mob) //Not in the lobby
+				C.update_sounds()
 
 /client/proc/update_sounds()
 
