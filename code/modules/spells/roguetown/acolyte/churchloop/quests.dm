@@ -456,7 +456,7 @@ var/global/list/Q_WITNESS_EFFECTS = list(
 				return
 
 			var/found = FALSE
-			for(var/mob/living/carbon/human/H in world)
+			for(var/mob/living/carbon/human/H as anything in GLOB.human_list)
 				if(H.client && H.client.ckey == owner_ckey)
 					found = TRUE
 					break
@@ -478,7 +478,7 @@ var/global/list/Q_WITNESS_EFFECTS = list(
 
 	var/half_bonus = round(amount * 0.5)
 
-	for(var/mob/living/carbon/human/HH in world)
+	for(var/mob/living/carbon/human/HH as anything in GLOB.human_list)
 		if(!HH.client) continue
 		if(!HAS_TRAIT(HH, TRAIT_CLERGY)) continue
 
