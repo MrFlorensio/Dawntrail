@@ -177,7 +177,10 @@ GLOBAL_VAR_INIT(mobids, 1)
 	hearers -= ignored_mobs
 	if(self_message)
 		hearers -= src
+	var/_visible_step = 0
 	for(var/mob/M in hearers)
+		if(++_visible_step % 16 == 0)
+			CHECK_TICK
 		if(!M.client)
 			continue
 		//This entire if/else chain could be in two lines but isn't for readibilties sake.
@@ -212,7 +215,10 @@ GLOBAL_VAR_INIT(mobids, 1)
 	var/list/hearers = get_hearers_in_view(hearing_distance, src)
 	if(self_message)
 		hearers -= src
+	var/_audible_step = 0
 	for(var/mob/M in hearers)
+		if(++_audible_step % 16 == 0)
+			CHECK_TICK
 		M.show_message(message, MSG_AUDIBLE, deaf_message, MSG_VISUAL)
 		if(runechat_message && M.can_see_runechat(src) && M.can_hear())
 			M.create_chat_message(src, raw_message = runechat_message, spans = list("emote"))
@@ -230,7 +236,10 @@ GLOBAL_VAR_INIT(mobids, 1)
 
 /atom/proc/loud_message(message, hearing_distance = DEFAULT_MESSAGE_RANGE, directional = TRUE)
 	var/list/listening = get_hearers_in_view(hearing_distance, src)
+	var/_loud_player_step = 0
 	for(var/_M in GLOB.player_list)
+		if(++_loud_player_step % 16 == 0)
+			CHECK_TICK
 		var/mob/M = _M
 		if(!M.client) //client is so that ghosts don't have to listen to mice
 			continue
@@ -246,7 +255,10 @@ GLOBAL_VAR_INIT(mobids, 1)
 			continue
 		listening |= M
 
+	var/_loud_listen_step = 0
 	for(var/mob/living/L in listening)
+		if(++_loud_listen_step % 12 == 0)
+			CHECK_TICK
 		var/strz
 		var/strdir
 		if(L.STAPER <= 8 && !(L in viewers(world.view, src)))
