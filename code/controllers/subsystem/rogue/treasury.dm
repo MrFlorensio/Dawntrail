@@ -13,12 +13,17 @@
 			L = job
 		else
 			L += job
+		var/list/job_wanted = list()
 		for(var/J in L)
-			for(var/mob/living/carbon/human/X in GLOB.human_list)
-				if(X.job == J)
-					names_to |= X.real_name
-	if(names_to.len)
+			job_wanted[J] = TRUE
 		for(var/mob/living/carbon/human/X in GLOB.human_list)
+			if(X.job in job_wanted)
+				names_to |= X.real_name
+	if(names_to.len)
+		var/note_tick = 0
+		for(var/mob/living/carbon/human/X in GLOB.human_list)
+			if(++note_tick % 20 == 0)
+				CHECK_TICK
 			if(X.real_name in names_to)
 				if(!X.stat)
 					to_chat(X, span_biginfo("[msg]"))
