@@ -27,7 +27,10 @@ SUBSYSTEM_DEF(weather)
 	for(var/datum/weather/W in curweathers)
 		W.process()
 
-	for(var/client/C in GLOB.clients)
+	var/_wx = 0
+	for(var/client/C as anything in GLOB.clients)
+		if(++_wx % 12 == 0)
+			CHECK_TICK
 		C.update_weather()
 
 	while(current_run.len)
@@ -39,12 +42,25 @@ SUBSYSTEM_DEF(weather)
 				return
 			continue
 		var/acted = FALSE
-		for(var/datum/weather/W in curweathers)
+		var/wcount = length(curweathers)
+		if(!wcount)
+			STOP_PROCESSING(src,thing)
+			if(MC_TICK_CHECK)
+				return
+			continue
+		if(wcount == 1)
+			var/datum/weather/W = curweathers[1]
 			if(W.can_weather_act(thing))
 				if(W.weather_act(thing))
 					STOP_PROCESSING(src,thing)
 				acted = TRUE
-		if(!curweathers.len || !acted)
+		else
+			for(var/datum/weather/W in curweathers)
+				if(W.can_weather_act(thing))
+					if(W.weather_act(thing))
+						STOP_PROCESSING(src,thing)
+					acted = TRUE
+		if(!length(curweathers) || !acted)
 			STOP_PROCESSING(src,thing)
 		if(MC_TICK_CHECK)
 			return
