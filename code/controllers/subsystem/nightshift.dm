@@ -66,9 +66,15 @@ SUBSYSTEM_DEF(nightshift)
 
 /datum/controller/subsystem/nightshift/proc/update_nightshift()
 	set waitfor = FALSE
+	var/n = 0
 	for(var/obj/A in GLOB.TodUpdate)
+		if(++n % 16 == 0)
+			CHECK_TICK
 		A.update_tod(GLOB.tod)
+	n = 0
 	for(var/mob/living/M as anything in GLOB.mob_living_list)
+		if(++n % 12 == 0)
+			CHECK_TICK
 		M.update_tod(GLOB.tod)
 
 /obj/proc/update_tod(todd)
