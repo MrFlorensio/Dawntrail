@@ -51,7 +51,7 @@ SUBSYSTEM_DEF(soundloopers)
 		if(PS in played_loops) //Make sure it's not already on the list
 			continue
 
-		var/atom/PS_parent = PS.parent.resolve()
+		var/atom/PS_parent = PS.parent?.resolve()
 		if(!PS_parent)
 			continue
 
