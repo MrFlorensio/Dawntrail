@@ -32,7 +32,10 @@ SUBSYSTEM_DEF(augury)
 			biggest_threat = threat
 
 	if(doombringers.len)
+		var/aug_tick = 0
 		for(var/i in GLOB.player_list)
+			if(++aug_tick % 20 == 0)
+				CHECK_TICK
 			if(isobserver(i) && (!(observers_given_action[i])))
 				var/datum/action/innate/augury/A = new
 				A.Grant(i)
