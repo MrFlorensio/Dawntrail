@@ -9,9 +9,11 @@ SUBSYSTEM_DEF(soundloopers)
 	var/client_ticker = 0
 	/// When TRUE, run one client sweep after the currentrun queue drains (survives MC_TICK_CHECK resumes).
 	var/pending_client_refresh = FALSE
+	/// Clients left to refresh this sweep; survives MC_TICK_CHECK between fires.
+	var/list/client_refresh_queue = null
 
 /datum/controller/subsystem/soundloopers/fire(resumed = 0)
-	if (!resumed || !currentrun.len)
+	if (!resumed)
 		src.currentrun = processing.Copy()
 
 	client_ticker++
@@ -38,11 +40,20 @@ SUBSYSTEM_DEF(soundloopers)
 		if (MC_TICK_CHECK)
 			return
 
-	if(pending_client_refresh)
+	if(pending_client_refresh && isnull(client_refresh_queue))
 		pending_client_refresh = FALSE
-		for(var/client/C in GLOB.clients)
-			if(C.mob) //Not in the lobby
+		client_refresh_queue = GLOB.clients.Copy()
+
+	if(client_refresh_queue?.len)
+		var/client_tick = 0
+		while(client_refresh_queue.len)
+			var/client/C = client_refresh_queue[client_refresh_queue.len]
+			client_refresh_queue.len--
+			if(C?.mob)
 				C.update_sounds()
+			if(++client_tick % 4 == 0 && MC_TICK_CHECK)
+				return
+		client_refresh_queue = null
 
 /client/proc/update_sounds()
 
